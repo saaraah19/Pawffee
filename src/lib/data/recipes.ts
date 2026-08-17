@@ -17,6 +17,11 @@ export type StepInput = {
   image?: string | null;
 };
 
+export type GalleryImageInput = {
+  url: string;
+  caption?: string | null;
+};
+
 export type RecipeInput = {
   title: string;
   description?: string | null;
@@ -38,6 +43,7 @@ export type RecipeInput = {
   my_verdict?: string | null;
   ingredients: IngredientInput[];
   steps: StepInput[];
+  images?: GalleryImageInput[];
   is_demo?: boolean;
 };
 
@@ -87,9 +93,17 @@ export type StepRow = {
   image: string | null;
 };
 
+export type GalleryImageRow = {
+  id: number;
+  url: string;
+  caption: string | null;
+  position: number;
+};
+
 export type FullRecipe = RecipeRow & {
   ingredients: RecipeIngredientRow[];
   steps: StepRow[];
+  images: GalleryImageRow[];
   tagList: string[];
 };
 
@@ -111,8 +125,12 @@ async function attachRelations(row: RecipeRow | undefined): Promise<FullRecipe |
     `SELECT * FROM steps WHERE recipe_id = $1 ORDER BY position ASC`,
     [row.id]
   );
+  const images = await query<GalleryImageRow>(
+    `SELECT * FROM recipe_images WHERE recipe_id = $1 ORDER BY position ASC`,
+    [row.id]
+  );
   const tagList: string[] = Array.isArray(row.tags) ? row.tags : [];
-  return { ...row, ingredients, steps, tagList };
+  return { ...row, ingredients, steps, images, tagList };
 }
 
 export async function getRecipeBySlug(slug: string): Promise<FullRecipe | undefined> {
@@ -221,14 +239,15 @@ export async function relatedRecipes(recipe: FullRecipe, limit = 3): Promise<Rec
   return rows;
 }
 
-async function insertIngredientsAndSteps(
+async function insertRecipeChildren(
   q: <R extends Record<string, unknown> = Record<string, unknown>>(
     text: string,
     params?: unknown[]
   ) => Promise<R[]>,
   recipeId: number,
   ingredients: IngredientInput[],
-  steps: StepInput[]
+  steps: StepInput[],
+  images: GalleryImageInput[]
 ) {
   const groupOrder: string[] = [];
   for (const ing of ingredients) {
@@ -261,6 +280,14 @@ async function insertIngredientsAndSteps(
     await q(
       `INSERT INTO steps (recipe_id, position, text, image) VALUES ($1, $2, $3, $4)`,
       [recipeId, idx, s.text, s.image || null]
+    );
+  }
+
+  for (let idx = 0; idx < images.length; idx++) {
+    const img = images[idx];
+    await q(
+      `INSERT INTO recipe_images (recipe_id, url, caption, position) VALUES ($1, $2, $3, $4)`,
+      [recipeId, img.url, img.caption || null, idx]
     );
   }
 }
@@ -315,7 +342,7 @@ export async function createRecipe(input: RecipeInput): Promise<FullRecipe> {
       ]
     );
     const id = rows[0].id;
-    await insertIngredientsAndSteps(q, id, input.ingredients, input.steps);
+    await insertRecipeChildren(q, id, input.ingredients, input.steps, input.images || []);
     return id;
   });
 
@@ -362,7 +389,8 @@ export async function updateRecipe(id: number, input: RecipeInput): Promise<Full
     await q(`DELETE FROM ingredients WHERE recipe_id = $1`, [id]);
     await q(`DELETE FROM ingredient_groups WHERE recipe_id = $1`, [id]);
     await q(`DELETE FROM steps WHERE recipe_id = $1`, [id]);
-    await insertIngredientsAndSteps(q, id, input.ingredients, input.steps);
+    await q(`DELETE FROM recipe_images WHERE recipe_id = $1`, [id]);
+    await insertRecipeChildren(q, id, input.ingredients, input.steps, input.images || []);
   });
 
   return (await getRecipeById(id))!;

@@ -138,6 +138,16 @@ const SCHEMA_SQL = `
     image TEXT
   );
 
+  CREATE TABLE IF NOT EXISTS recipe_images (
+    id SERIAL PRIMARY KEY,
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    url TEXT NOT NULL,
+    caption TEXT,
+    position INTEGER NOT NULL DEFAULT 0
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_recipe_images_recipe ON recipe_images(recipe_id);
+
   CREATE INDEX IF NOT EXISTS idx_recipes_status ON recipes(status);
   CREATE INDEX IF NOT EXISTS idx_recipes_category ON recipes(category_id);
   CREATE INDEX IF NOT EXISTS idx_ingredients_recipe ON ingredients(recipe_id);

@@ -7,6 +7,7 @@ import RecipeMeta from "@/components/RecipeMeta";
 import IngredientList from "@/components/IngredientList";
 import NoteSection from "@/components/NoteSection";
 import RecipeCard from "@/components/RecipeCard";
+import RecipeGallery from "@/components/RecipeGallery";
 import PawIcon from "@/components/PawIcon";
 
 export const dynamic = "force-dynamic";
@@ -101,6 +102,8 @@ export default async function RecipeDetailPage({
           />
         </div>
       )}
+
+      <RecipeGallery images={recipe.images} />
 
       <div className="mt-8">
         <RecipeMeta recipe={recipe} />

@@ -6,13 +6,18 @@ import Image from "next/image";
 import type { Category } from "@/lib/data/categories";
 import type { FullRecipe } from "@/lib/data/recipes";
 
-type IngredientDraft = {
+type IngredientItem = {
   key: string;
-  group: string;
   name: string;
   quantity: string;
   unit: string;
   notes: string;
+};
+
+type IngredientGroup = {
+  key: string;
+  name: string;
+  items: IngredientItem[];
 };
 
 type StepDraft = {
@@ -21,17 +26,46 @@ type StepDraft = {
   image: string;
 };
 
+type GalleryDraft = {
+  key: string;
+  url: string;
+};
+
 let keySeed = 0;
 function newKey() {
   keySeed += 1;
   return `k${Date.now()}${keySeed}`;
 }
 
-function emptyIngredient(): IngredientDraft {
-  return { key: newKey(), group: "", name: "", quantity: "", unit: "", notes: "" };
+function emptyIngredientItem(): IngredientItem {
+  return { key: newKey(), name: "", quantity: "", unit: "", notes: "" };
+}
+function emptyGroup(): IngredientGroup {
+  return { key: newKey(), name: "", items: [emptyIngredientItem()] };
 }
 function emptyStep(): StepDraft {
   return { key: newKey(), text: "", image: "" };
+}
+
+function groupsFromRecipe(recipe?: FullRecipe): IngredientGroup[] {
+  if (!recipe || recipe.ingredients.length === 0) return [emptyGroup()];
+  const order: string[] = [];
+  const map = new Map<string, IngredientItem[]>();
+  for (const ing of recipe.ingredients) {
+    const groupName = ing.group_name || "";
+    if (!map.has(groupName)) {
+      order.push(groupName);
+      map.set(groupName, []);
+    }
+    map.get(groupName)!.push({
+      key: newKey(),
+      name: ing.name,
+      quantity: ing.quantity ?? "",
+      unit: ing.unit ?? "",
+      notes: ing.notes ?? "",
+    });
+  }
+  return order.map((name) => ({ key: newKey(), name, items: map.get(name)! }));
 }
 
 const UNITS = ["g", "kg", "ml", "l", "tsp", "tbsp", "cup", "fl_oz", "oz", "lb", "pinch", ""];
@@ -68,55 +102,128 @@ export default function RecipeEditorForm({
   const [cookingNotes, setCookingNotes] = useState(recipe?.cooking_notes ?? "");
   const [myVerdict, setMyVerdict] = useState(recipe?.my_verdict ?? "");
 
-  const [ingredients, setIngredients] = useState<IngredientDraft[]>(
-    recipe && recipe.ingredients.length
-      ? recipe.ingredients.map((i) => ({
-          key: newKey(),
-          group: i.group_name ?? "",
-          name: i.name,
-          quantity: i.quantity ?? "",
-          unit: i.unit ?? "",
-          notes: i.notes ?? "",
-        }))
-      : [emptyIngredient()]
-  );
+  const [groups, setGroups] = useState<IngredientGroup[]>(groupsFromRecipe(recipe));
   const [steps, setSteps] = useState<StepDraft[]>(
     recipe && recipe.steps.length
       ? recipe.steps.map((s) => ({ key: newKey(), text: s.text, image: s.image ?? "" }))
       : [emptyStep()]
   );
+  const [gallery, setGallery] = useState<GalleryDraft[]>(
+    recipe ? recipe.images.map((img) => ({ key: newKey(), url: img.url })) : []
+  );
 
-  const [uploading, setUploading] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [uploadingStepKey, setUploadingStepKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  function updateIngredient(key: string, patch: Partial<IngredientDraft>) {
-    setIngredients((prev) => prev.map((i) => (i.key === key ? { ...i, ...patch } : i)));
+  // --- Ingredient group helpers ---
+  function updateGroupName(groupKey: string, name: string) {
+    setGroups((prev) => prev.map((g) => (g.key === groupKey ? { ...g, name } : g)));
   }
+  function updateItem(groupKey: string, itemKey: string, patch: Partial<IngredientItem>) {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.key !== groupKey
+          ? g
+          : { ...g, items: g.items.map((i) => (i.key === itemKey ? { ...i, ...patch } : i)) }
+      )
+    );
+  }
+  function addItem(groupKey: string) {
+    setGroups((prev) =>
+      prev.map((g) => (g.key === groupKey ? { ...g, items: [...g.items, emptyIngredientItem()] } : g))
+    );
+  }
+  function removeItem(groupKey: string, itemKey: string) {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.key !== groupKey ? g : { ...g, items: g.items.filter((i) => i.key !== itemKey) }
+      )
+    );
+  }
+  function addGroup() {
+    setGroups((prev) => [...prev, emptyGroup()]);
+  }
+  function removeGroup(groupKey: string) {
+    setGroups((prev) => (prev.length > 1 ? prev.filter((g) => g.key !== groupKey) : prev));
+  }
+
   function updateStep(key: string, patch: Partial<StepDraft>) {
     setSteps((prev) => prev.map((s) => (s.key === key ? { ...s, ...patch } : s)));
   }
 
+  async function uploadFile(file: File): Promise<string> {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Upload failed");
+    return data.url as string;
+  }
+
   async function handleCoverUpload(file: File) {
-    setUploading(true);
+    setUploadingCover(true);
     setError(null);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
-      setCoverImage(data.url);
+      setCoverImage(await uploadFile(file));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not upload image");
     } finally {
-      setUploading(false);
+      setUploadingCover(false);
+    }
+  }
+
+  async function handleGalleryUpload(files: FileList) {
+    setUploadingGallery(true);
+    setError(null);
+    try {
+      const uploaded: GalleryDraft[] = [];
+      for (const file of Array.from(files)) {
+        const url = await uploadFile(file);
+        uploaded.push({ key: newKey(), url });
+      }
+      setGallery((prev) => [...prev, ...uploaded]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not upload one or more images");
+    } finally {
+      setUploadingGallery(false);
+    }
+  }
+
+  function removeGalleryImage(key: string) {
+    setGallery((prev) => prev.filter((g) => g.key !== key));
+  }
+
+  async function handleStepImageUpload(stepKey: string, file: File) {
+    setUploadingStepKey(stepKey);
+    setError(null);
+    try {
+      const url = await uploadFile(file);
+      updateStep(stepKey, { image: url });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not upload image");
+    } finally {
+      setUploadingStepKey(null);
     }
   }
 
   function buildPayload(status: "draft" | "published") {
+    const ingredients = groups.flatMap((g) =>
+      g.items
+        .filter((i) => i.name.trim())
+        .map((i) => ({
+          group: g.name.trim() || null,
+          name: i.name.trim(),
+          quantity: i.quantity.trim() || null,
+          unit: i.unit.trim() || null,
+          notes: i.notes.trim() || null,
+        }))
+    );
+
     return {
       title: title.trim(),
       description: description.trim() || null,
@@ -139,18 +246,11 @@ export default function RecipeEditorForm({
       my_secret: mySecret.trim() || null,
       cooking_notes: cookingNotes.trim() || null,
       my_verdict: myVerdict.trim() || null,
-      ingredients: ingredients
-        .filter((i) => i.name.trim())
-        .map((i) => ({
-          group: i.group.trim() || null,
-          name: i.name.trim(),
-          quantity: i.quantity.trim() || null,
-          unit: i.unit.trim() || null,
-          notes: i.notes.trim() || null,
-        })),
+      ingredients,
       steps: steps
         .filter((s) => s.text.trim())
         .map((s) => ({ text: s.text.trim(), image: s.image.trim() || null })),
+      images: gallery.map((g) => ({ url: g.url })),
     };
   }
 
@@ -240,6 +340,7 @@ export default function RecipeEditorForm({
 
         <div>
           <span className={labelClass}>Cover image</span>
+          <p className="mb-2 -mt-1 text-xs text-taupe">The main photo shown on cards and at the top of the recipe.</p>
           <div className="flex items-center gap-4">
             {coverImage ? (
               <div className="relative h-24 w-32 overflow-hidden rounded-lg bg-taupe-soft">
@@ -251,7 +352,7 @@ export default function RecipeEditorForm({
               </div>
             )}
             <label className="cursor-pointer rounded-full border border-espresso/20 px-4 py-2 text-sm text-espresso hover:border-gold">
-              {uploading ? "Uploading…" : coverImage ? "Replace" : "Upload image"}
+              {uploadingCover ? "Uploading…" : coverImage ? "Replace" : "Upload image"}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/avif"
@@ -263,6 +364,43 @@ export default function RecipeEditorForm({
               />
             </label>
           </div>
+        </div>
+
+        <div>
+          <span className={labelClass}>Photo gallery</span>
+          <p className="mb-2 -mt-1 text-xs text-taupe">
+            Extra photos shown below the cover image — from the top, a slice, close-ups, whatever tells the story. Upload as many as you like.
+          </p>
+          {gallery.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-3">
+              {gallery.map((img) => (
+                <div key={img.key} className="group relative h-20 w-20 overflow-hidden rounded-lg bg-taupe-soft">
+                  <Image src={img.url} alt="" fill className="object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeGalleryImage(img.key)}
+                    aria-label="Remove photo"
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-espresso/80 text-xs text-cream opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <label className="inline-block cursor-pointer rounded-full border border-espresso/20 px-4 py-2 text-sm text-espresso hover:border-gold">
+            {uploadingGallery ? "Uploading…" : "Add photos"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) handleGalleryUpload(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </label>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -302,61 +440,90 @@ export default function RecipeEditorForm({
         </div>
       </Section>
 
-      {/* Ingredients */}
-      <Section title="Ingredients">
-        <div className="space-y-3">
-          {ingredients.map((ing) => (
-            <div key={ing.key} className="grid grid-cols-12 gap-2 rounded-lg border border-taupe-soft/70 p-3">
-              <input
-                placeholder="Group (optional, e.g. Dough)"
-                className={`col-span-12 ${inputClass}`}
-                value={ing.group}
-                onChange={(e) => updateIngredient(ing.key, { group: e.target.value })}
-              />
-              <input
-                placeholder="Ingredient name"
-                className={`col-span-12 sm:col-span-5 ${inputClass}`}
-                value={ing.name}
-                onChange={(e) => updateIngredient(ing.key, { name: e.target.value })}
-              />
-              <input
-                placeholder="Qty"
-                className={`col-span-4 sm:col-span-2 ${inputClass}`}
-                value={ing.quantity}
-                onChange={(e) => updateIngredient(ing.key, { quantity: e.target.value })}
-              />
-              <select
-                className={`col-span-4 sm:col-span-2 ${inputClass}`}
-                value={ing.unit}
-                onChange={(e) => updateIngredient(ing.key, { unit: e.target.value })}
-              >
-                {UNITS.map((u) => (
-                  <option key={u || "none"} value={u}>{u || "—"}</option>
+      {/* Ingredients — grouped */}
+      <Section
+        title="Ingredients"
+        subtitle="Add a group (e.g. “Dry ingredients”), then list every ingredient that belongs to it. Leave the group name blank if you don't need groups."
+      >
+        <div className="space-y-5">
+          {groups.map((group) => (
+            <div key={group.key} className="rounded-xl border border-taupe-soft/80 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <input
+                  placeholder="Group name (optional, e.g. Dry ingredients)"
+                  className={`${inputClass} flex-1 font-medium`}
+                  value={group.name}
+                  onChange={(e) => updateGroupName(group.key, e.target.value)}
+                />
+                {groups.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeGroup(group.key)}
+                    className="shrink-0 rounded-lg px-2 py-2 text-xs text-taupe hover:text-danger"
+                  >
+                    Remove group
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {group.items.map((item) => (
+                  <div key={item.key} className="grid grid-cols-12 gap-2">
+                    <input
+                      placeholder="Ingredient name"
+                      className={`col-span-12 sm:col-span-5 ${inputClass}`}
+                      value={item.name}
+                      onChange={(e) => updateItem(group.key, item.key, { name: e.target.value })}
+                    />
+                    <input
+                      placeholder="Qty"
+                      className={`col-span-4 sm:col-span-2 ${inputClass}`}
+                      value={item.quantity}
+                      onChange={(e) => updateItem(group.key, item.key, { quantity: e.target.value })}
+                    />
+                    <select
+                      className={`col-span-4 sm:col-span-2 ${inputClass}`}
+                      value={item.unit}
+                      onChange={(e) => updateItem(group.key, item.key, { unit: e.target.value })}
+                    >
+                      {UNITS.map((u) => (
+                        <option key={u || "none"} value={u}>{u || "—"}</option>
+                      ))}
+                    </select>
+                    <input
+                      placeholder="Notes (optional)"
+                      className={`col-span-3 sm:col-span-2 ${inputClass}`}
+                      value={item.notes}
+                      onChange={(e) => updateItem(group.key, item.key, { notes: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeItem(group.key, item.key)}
+                      className="col-span-1 rounded-lg text-taupe hover:text-danger"
+                      aria-label="Remove ingredient"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 ))}
-              </select>
-              <input
-                placeholder="Notes (optional)"
-                className={`col-span-3 sm:col-span-2 ${inputClass}`}
-                value={ing.notes}
-                onChange={(e) => updateIngredient(ing.key, { notes: e.target.value })}
-              />
+              </div>
+
               <button
                 type="button"
-                onClick={() => setIngredients((prev) => prev.filter((i) => i.key !== ing.key))}
-                className="col-span-1 rounded-lg text-taupe hover:text-danger"
-                aria-label="Remove ingredient"
+                onClick={() => addItem(group.key)}
+                className="mt-3 rounded-full border border-espresso/15 px-3.5 py-1.5 text-xs font-medium text-espresso hover:border-gold"
               >
-                ✕
+                + Add ingredient to this group
               </button>
             </div>
           ))}
         </div>
         <button
           type="button"
-          onClick={() => setIngredients((prev) => [...prev, emptyIngredient()])}
-          className="mt-3 rounded-full border border-espresso/20 px-4 py-2 text-sm text-espresso hover:border-gold"
+          onClick={addGroup}
+          className="mt-4 rounded-full border border-espresso/20 px-4 py-2 text-sm text-espresso hover:border-gold"
         >
-          + Add ingredient
+          + Add another group
         </button>
       </Section>
 
@@ -364,25 +531,56 @@ export default function RecipeEditorForm({
       <Section title="Instructions">
         <div className="space-y-3">
           {steps.map((step, idx) => (
-            <div key={step.key} className="flex gap-3 rounded-lg border border-taupe-soft/70 p-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-espresso text-xs text-cream">
-                {idx + 1}
-              </span>
-              <textarea
-                placeholder="Describe this step…"
-                className={`${inputClass} flex-1`}
-                rows={2}
-                value={step.text}
-                onChange={(e) => updateStep(step.key, { text: e.target.value })}
-              />
-              <button
-                type="button"
-                onClick={() => setSteps((prev) => prev.filter((s) => s.key !== step.key))}
-                className="shrink-0 rounded-lg px-2 text-taupe hover:text-danger"
-                aria-label="Remove step"
-              >
-                ✕
-              </button>
+            <div key={step.key} className="rounded-lg border border-taupe-soft/70 p-3">
+              <div className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-espresso text-xs text-cream">
+                  {idx + 1}
+                </span>
+                <textarea
+                  placeholder="Describe this step…"
+                  className={`${inputClass} flex-1`}
+                  rows={2}
+                  value={step.text}
+                  onChange={(e) => updateStep(step.key, { text: e.target.value })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setSteps((prev) => prev.filter((s) => s.key !== step.key))}
+                  className="shrink-0 rounded-lg px-2 text-taupe hover:text-danger"
+                  aria-label="Remove step"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="mt-2 flex items-center gap-3 pl-10">
+                {step.image ? (
+                  <div className="group relative h-14 w-14 overflow-hidden rounded-lg bg-taupe-soft">
+                    <Image src={step.image} alt="" fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => updateStep(step.key, { image: "" })}
+                      aria-label="Remove step photo"
+                      className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-espresso/80 text-[10px] text-cream opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer rounded-full border border-espresso/15 px-3 py-1.5 text-xs font-medium text-espresso hover:border-gold">
+                    {uploadingStepKey === step.key ? "Uploading…" : "+ Add photo"}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/avif"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleStepImageUpload(step.key, file);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
             </div>
           ))}
         </div>

@@ -13,6 +13,11 @@ export const stepSchema = z.object({
   image: z.string().nullable().optional(),
 });
 
+export const galleryImageSchema = z.object({
+  url: z.string().min(1),
+  caption: z.string().nullable().optional(),
+});
+
 export const recipeSchema = z.object({
   title: z.string().min(2, "Title is required"),
   description: z.string().nullable().optional(),
@@ -34,6 +39,7 @@ export const recipeSchema = z.object({
   my_verdict: z.string().nullable().optional(),
   ingredients: z.array(ingredientSchema).min(1, "Add at least one ingredient"),
   steps: z.array(stepSchema).min(1, "Add at least one instruction step"),
+  images: z.array(galleryImageSchema).optional(),
 });
 
 export type RecipeFormPayload = z.infer<typeof recipeSchema>;
