@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     // in production (e.g. an R2/S3 public bucket domain) via env-driven config
     // if needed -- kept permissive by pattern below for common S3-style hosts.
     remotePatterns: [
+      { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "**.amazonaws.com" },
       { protocol: "https", hostname: "**.r2.dev" },
       { protocol: "https", hostname: "**.digitaloceanspaces.com" },

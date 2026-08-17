@@ -11,9 +11,9 @@ product. Built with Next.js (App Router), PostgreSQL, and Tailwind CSS.
 - **Styling:** Tailwind CSS v4, self-hosted Fraunces + Work Sans fonts (no
   external font requests)
 - **Auth:** Cookie-based admin session (JWT + bcrypt), single admin account
-- **Image storage:** S3-compatible object storage in production (AWS S3,
-  Cloudflare R2, Supabase Storage, DigitalOcean Spaces, MinIO, ...), with a
-  local-disk fallback for `npm run dev`
+- **Image storage:** Cloudinary or any S3-compatible bucket in production
+  (AWS S3, Cloudflare R2, Supabase Storage, DigitalOcean Spaces, MinIO, ...),
+  with a local-disk fallback for `npm run dev`
 - **PDF generation:** `@react-pdf/renderer` — a real structured document, not
   a screenshot
 
@@ -94,10 +94,13 @@ DELETE FROM recipes WHERE is_demo = true;
   SSL (most do).
 - **Image storage:** set `S3_BUCKET`, `S3_ACCESS_KEY_ID`,
   `S3_SECRET_ACCESS_KEY`, and (for non-AWS providers) `S3_ENDPOINT` and
-  `S3_PUBLIC_URL_BASE`. Without these, uploads fall back to the local
-  filesystem, which is **not persistent** on most hosting platforms
-  (serverless functions and most container platforms wipe local disk on
-  every deploy/restart) — configure object storage before going live.
+  `S3_PUBLIC_URL_BASE`. **Or**, if you'd rather use Cloudinary, set
+  `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`
+  instead — Cloudinary is checked first if both are configured. Without
+  either, uploads fall back to the local filesystem, which is **not
+  persistent** on most hosting platforms (serverless functions and most
+  container platforms wipe local disk on every deploy/restart) — configure
+  one of these before going live.
 - **Session secret:** set `SESSION_SECRET` to a long random value.
 - Build and run:
 

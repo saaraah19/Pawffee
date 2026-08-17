@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import path from "path";
 import fs from "fs/promises";
+import { v2 as cloudinary } from "cloudinary";
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 /**
@@ -8,16 +9,39 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
  * serverless function's local filesystem (e.g. Vercel's /tmp, or any
  * container that's rebuilt on deploy) — that storage is wiped constantly.
  *
- * Production: uploads go to an S3-compatible bucket (AWS S3, Cloudflare R2,
- * Supabase Storage, DigitalOcean Spaces, MinIO, ...) configured via env vars.
- * This is the simplest persistent option that works the same way regardless
- * of which platform Pawffee is deployed to.
- *
- * Local development: if no bucket is configured, uploads fall back to
- * public/uploads on disk. This is fine for `npm run dev` but is NOT
- * persistent in most production hosting -- configure S3 env vars before
- * deploying for real.
+ * Three backends are supported, tried in this order:
+ *   1. Cloudinary, if CLOUDINARY_* env vars are set (preferred).
+ *   2. Any S3-compatible bucket (AWS S3, R2, Spaces, Supabase, MinIO...),
+ *      if S3_* env vars are set.
+ *   3. Local disk under public/uploads — dev-only fallback, NOT persistent
+ *      on most production hosting.
  */
+
+// --- Cloudinary -------------------------------------------------------
+
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY;
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
+const CLOUDINARY_FOLDER = process.env.CLOUDINARY_FOLDER || "pawffee/recipes";
+
+const isCloudinaryConfigured = Boolean(
+  CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET
+);
+
+let cloudinaryConfigured = false;
+function configureCloudinary() {
+  if (!cloudinaryConfigured) {
+    cloudinary.config({
+      cloud_name: CLOUDINARY_CLOUD_NAME,
+      api_key: CLOUDINARY_API_KEY,
+      api_secret: CLOUDINARY_API_SECRET,
+      secure: true,
+    });
+    cloudinaryConfigured = true;
+  }
+}
+
+// --- S3-compatible ------------------------------------------------------
 
 const BUCKET = process.env.S3_BUCKET;
 const REGION = process.env.S3_REGION || "auto";
@@ -26,12 +50,10 @@ const ACCESS_KEY_ID = process.env.S3_ACCESS_KEY_ID;
 const SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY;
 const PUBLIC_URL_BASE = process.env.S3_PUBLIC_URL_BASE; // e.g. https://cdn.pawffee.com or the bucket's public URL
 
-export const isObjectStorageConfigured = Boolean(
-  BUCKET && ACCESS_KEY_ID && SECRET_ACCESS_KEY
-);
+const isS3Configured = Boolean(BUCKET && ACCESS_KEY_ID && SECRET_ACCESS_KEY);
 
 let s3Client: S3Client | null = null;
-function getClient() {
+function getS3Client() {
   if (!s3Client) {
     s3Client = new S3Client({
       region: REGION,
@@ -46,6 +68,12 @@ function getClient() {
   return s3Client;
 }
 
+export const activeStorageBackend: "cloudinary" | "s3" | "local" = isCloudinaryConfigured
+  ? "cloudinary"
+  : isS3Configured
+    ? "s3"
+    : "local";
+
 function safeExtension(filename: string) {
   const ext = path.extname(filename).toLowerCase().replace(/[^a-z0-9.]/g, "");
   return ext && ext.length <= 6 ? ext : "";
@@ -58,10 +86,29 @@ export async function saveUploadedImage(
   originalFilename: string,
   contentType: string
 ): Promise<UploadedImage> {
-  const key = `recipes/${randomUUID()}${safeExtension(originalFilename)}`;
+  // 1. Cloudinary
+  if (isCloudinaryConfigured) {
+    configureCloudinary();
+    const publicId = randomUUID();
+    const result = await new Promise<{ secure_url: string; public_id: string }>(
+      (resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: CLOUDINARY_FOLDER, public_id: publicId, resource_type: "image" },
+          (error, uploadResult) => {
+            if (error || !uploadResult) reject(error || new Error("Cloudinary upload failed"));
+            else resolve(uploadResult);
+          }
+        );
+        stream.end(buffer);
+      }
+    );
+    return { url: result.secure_url, key: result.public_id };
+  }
 
-  if (isObjectStorageConfigured) {
-    const client = getClient();
+  // 2. S3-compatible
+  if (isS3Configured) {
+    const key = `recipes/${randomUUID()}${safeExtension(originalFilename)}`;
+    const client = getS3Client();
     await client.send(
       new PutObjectCommand({
         Bucket: BUCKET,
@@ -79,21 +126,29 @@ export async function saveUploadedImage(
     return { url, key };
   }
 
-  // Dev-only fallback: local disk under public/uploads.
+  // 3. Dev-only fallback: local disk under public/uploads.
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
   await fs.mkdir(uploadsDir, { recursive: true });
-  const localName = key.replace("recipes/", "");
+  const localName = `${randomUUID()}${safeExtension(originalFilename)}`;
   await fs.writeFile(path.join(uploadsDir, localName), buffer);
   return { url: `/uploads/${localName}`, key: localName };
 }
 
 export async function deleteUploadedImage(key: string): Promise<void> {
   if (!key) return;
-  if (isObjectStorageConfigured) {
-    const client = getClient();
+
+  if (isCloudinaryConfigured) {
+    configureCloudinary();
+    await cloudinary.uploader.destroy(key).catch(() => {});
+    return;
+  }
+
+  if (isS3Configured) {
+    const client = getS3Client();
     await client.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: `recipes/${key}` }));
     return;
   }
+
   const localPath = path.join(process.cwd(), "public", "uploads", key);
   await fs.unlink(localPath).catch(() => {});
 }
