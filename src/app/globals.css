@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+/* Fraunces: editorial display serif with soft, slightly wonky curves — the
+   Pawffee wordmark and recipe titles live here. Work Sans: quiet, highly
+   readable body/UI face. Both self-hosted via fontsource (no external calls). */
+@import "@fontsource/fraunces/400.css";
+@import "@fontsource/fraunces/500.css";
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/fraunces/700.css";
+@import "@fontsource/fraunces/400-italic.css";
+@import "@fontsource/fraunces/600-italic.css";
+@import "@fontsource/work-sans/400.css";
+@import "@fontsource/work-sans/500.css";
+@import "@fontsource/work-sans/600.css";
+
+:root {
+  /* --- Pawffee palette --- */
+  --cream: #f9f2e6;      /* page background */
+  --paper: #fffcf6;      /* card / surface background */
+  --espresso: #2c1f17;   /* primary text, deep roasted brown */
+  --coffee: #5b4230;     /* secondary text / mid brown */
+  --taupe: #a08c78;      /* muted borders, quiet UI */
+  --taupe-soft: #e7dcc9; /* dividers, subtle fills */
+  --gold: #b1793a;       /* warm caramel accent — links, highlights */
+  --gold-deep: #8f5f2a;  /* accent hover / emphasis */
+  --sage: #6b7658;       /* small secondary accent, used sparingly (herbs) */
+  --paw: #caa06a;        /* paw-print motif tone */
+  --danger: #9c3b2e;
+  --success: #4c6b41;
+}
+
+@theme inline {
+  --color-cream: var(--cream);
+  --color-paper: var(--paper);
+  --color-espresso: var(--espresso);
+  --color-coffee: var(--coffee);
+  --color-taupe: var(--taupe);
+  --color-taupe-soft: var(--taupe-soft);
+  --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
+  --color-sage: var(--sage);
+  --color-paw: var(--paw);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-body: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--cream);
+  color: var(--espresso);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--paw);
+  color: var(--espresso);
+}
+
+/* Visible focus state everywhere — accessibility floor */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--gold-deep);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Hairline divider used throughout as a quiet structural device */
+.divider {
+  border-top: 1px solid var(--taupe-soft);
+}
+
+/* Small caps-ish label used for eyebrows / metadata labels */
+.label-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--coffee);
+}
+
+.prose-recipe p {
+  margin-bottom: 1em;
+}
