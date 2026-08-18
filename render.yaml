@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: pawffee
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Point this at your database provider's connection string --
+      # deliberately left blank so it never ends up committed to the repo.
+      # A permanently-free Postgres from Neon or Supabase is recommended
+      # over Render's own free database, which auto-deletes after 30 days.
+      - key: DATABASE_URL
+        sync: false
+      - key: PGSSL
+        value: "true"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+# If you'd rather use Render's own managed Postgres instead of an external
+# provider, uncomment this block, remove the DATABASE_URL entry above, and
+# add this in its place instead:
+#   - key: DATABASE_URL
+#     fromDatabase:
+#       name: pawffee-db
+#       property: connectionString
+#
+# databases:
+#   - name: pawffee-db
+#     plan: free   # remember: Render's free Postgres expires 30 days after creation
