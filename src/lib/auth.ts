@@ -1,8 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { ensureSchema, query, queryOne } from "@/lib/db";
+import { requireSecret } from "@/lib/env";
 
-const JWT_SECRET = process.env.SESSION_SECRET || "pawffee-dev-secret-change-me";
+const JWT_SECRET = requireSecret("SESSION_SECRET", "pawffee-dev-secret-change-me");
 export const SESSION_COOKIE = "pawffee_admin_session";
 
 export type AdminUser = { id: number; email: string; password_hash: string };
@@ -41,5 +42,31 @@ export async function ensureAdminUser(email: string, password: string): Promise<
     email.toLowerCase(),
     hash,
   ]);
+  return (await getAdminByEmail(email.toLowerCase()))!;
+}
+
+/**
+ * Creates the admin account if it doesn't exist yet, or updates the email
+ * and/or password of the single existing admin account if it does. Used by
+ * `npm run set-admin` to rotate credentials without touching the database
+ * by hand.
+ */
+export async function upsertAdminUser(email: string, password: string): Promise<AdminUser> {
+  await ensureSchema();
+  const hash = bcrypt.hashSync(password, 10);
+  const anyExisting = await queryOne<AdminUser>(`SELECT * FROM admin_users LIMIT 1`);
+
+  if (!anyExisting) {
+    await query(`INSERT INTO admin_users (email, password_hash) VALUES ($1, $2)`, [
+      email.toLowerCase(),
+      hash,
+    ]);
+  } else {
+    await query(`UPDATE admin_users SET email = $1, password_hash = $2 WHERE id = $3`, [
+      email.toLowerCase(),
+      hash,
+      anyExisting.id,
+    ]);
+  }
   return (await getAdminByEmail(email.toLowerCase()))!;
 }

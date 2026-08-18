@@ -1,132 +1,37 @@
 # Pawffee
 
-A small, personal cooking and baking recipe website — the recipes are the
-product. Built with Next.js (App Router), PostgreSQL, and Tailwind CSS.
+*A digital home for recipes that almost didn't survive.*
 
-## Stack
+For years, my recipes lived on paper — in a drawer, in the margins of old
+notebooks, on index cards stained with butter and vanilla. Some of them got
+wet in the sink. Some got lost in a move. A few I only half-remember now,
+and I still think about what I might have gotten wrong the last time I made
+them.
 
-- **Framework:** Next.js 16 (App Router, TypeScript, Turbopack)
-- **Database:** PostgreSQL, via the `pg` driver (no ORM — a small hand-written
-  data-access layer in `src/lib/data/`)
-- **Styling:** Tailwind CSS v4, self-hosted Fraunces + Work Sans fonts (no
-  external font requests)
-- **Auth:** Cookie-based admin session (JWT + bcrypt), single admin account
-- **Image storage:** Cloudinary or any S3-compatible bucket in production
-  (AWS S3, Cloudflare R2, Supabase Storage, DigitalOcean Spaces, MinIO, ...),
-  with a local-disk fallback for `npm run dev`
-- **PDF generation:** `@react-pdf/renderer` — a real structured document, not
-  a screenshot
+Pawffee started as a way to fix that. Not a food blog, and not a business —
+just a proper, permanent home for the recipes I've actually made, tested,
+adjusted, ruined, and eventually gotten right. A place to keep the technique
+notes that never survive being scribbled on a card: why a bake failed the
+first time, what changed the second time, the one small adjustment that
+turned a good recipe into one worth keeping.
 
-## Local setup
+It's also, in a small way, a place to share that with other people —
+the successes and the failures, the little secrets, the things I've learned
+about pastry that don't usually make it into a recipe at all.
 
-1. **Install dependencies**
+## What's here
 
-   ```bash
-   npm install
-   ```
+- A calm, photo-first collection of recipes — organized, searchable, and
+  printable
+- Notes alongside each one: what to prepare ahead of time, tips from
+  actually making it, and an honest verdict
+- A private space behind the scenes where I can add, edit, and publish new
+  recipes as I make them
 
-2. **Start PostgreSQL** (locally, or point at any hosted instance) and create
-   a database, e.g.:
+## Screenshots
 
-   ```bash
-   createdb pawffee
-   ```
+*(coming soon)*
 
-3. **Configure environment variables.** Copy `.env.example` to `.env.local`
-   and fill in at least `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_EMAIL`, and
-   `ADMIN_PASSWORD`:
+---
 
-   ```bash
-   cp .env.example .env.local
-   ```
-
-   Object storage (`S3_*` vars) can stay empty for local development —
-   uploaded images will be written to `public/uploads` instead. Fill them in
-   before deploying (see below).
-
-4. **Create the schema, admin account, and demo content:**
-
-   ```bash
-   npm run seed
-   ```
-
-   This is idempotent — safe to re-run. It creates the schema if missing,
-   creates the admin user from `ADMIN_EMAIL`/`ADMIN_PASSWORD` if one doesn't
-   exist yet, adds the starter categories, and adds a handful of demo
-   recipes (tagged `is_demo` in the database) the first time only.
-
-5. **Run the dev server:**
-
-   ```bash
-   npm run dev
-   ```
-
-   Visit `http://localhost:3000` for the public site and
-   `http://localhost:3000/admin` for the admin area.
-
-## Publishing your first real recipe
-
-1. Sign in at `/admin/login` with the admin account created by the seed
-   script (or created directly in the `admin_users` table).
-2. Go to **Recipes → New recipe**.
-3. Fill in the basic info, upload a cover image, add ingredients (optionally
-   grouped, e.g. "For the dough" / "For the topping") and ordered steps.
-4. Fill in whichever personal note sections apply — Before You Start, My
-   Tips, My Little Secret, Cooking Notes, My Verdict. Empty ones are
-   automatically hidden on the public page.
-5. Click **Save as draft** to keep working on it privately, or **Publish**
-   to make it live immediately. You can unpublish at any time from the
-   recipes list.
-
-## Removing the demo content
-
-The seed script tags its recipes with `is_demo = true`. Once you have real
-content, remove them from the admin recipe list, or directly:
-
-```sql
-DELETE FROM recipes WHERE is_demo = true;
-```
-
-## Production deployment
-
-- **Database:** point `DATABASE_URL` at a managed Postgres instance (e.g.
-  Supabase, Neon, Render, RDS). Set `PGSSL=true` for providers that require
-  SSL (most do).
-- **Image storage:** set `S3_BUCKET`, `S3_ACCESS_KEY_ID`,
-  `S3_SECRET_ACCESS_KEY`, and (for non-AWS providers) `S3_ENDPOINT` and
-  `S3_PUBLIC_URL_BASE`. **Or**, if you'd rather use Cloudinary, set
-  `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`
-  instead — Cloudinary is checked first if both are configured. Without
-  either, uploads fall back to the local filesystem, which is **not
-  persistent** on most hosting platforms (serverless functions and most
-  container platforms wipe local disk on every deploy/restart) — configure
-  one of these before going live.
-- **Session secret:** set `SESSION_SECRET` to a long random value.
-- Build and run:
-
-  ```bash
-  npm run build
-  npm run start
-  ```
-
-## Project structure
-
-```
-src/
-  app/
-    (site)/            # public pages: home, recipes, categories, about
-    admin/
-      (auth)/login/     # admin login (no sidebar layout)
-      (dashboard)/      # dashboard, recipes CRUD, categories CRUD (behind auth)
-    api/admin/          # admin REST API (recipes, categories, upload, auth)
-  components/            # public + admin UI components
-  lib/
-    data/                # recipe & category data-access layer (Postgres)
-    db.ts                # pg pool + schema migration
-    auth.ts               # admin auth helpers
-    storage.ts            # S3-compatible image storage (+ dev fallback)
-    pdf.tsx                # recipe PDF document definition
-    validation.ts          # zod schema for the recipe editor payload
-scripts/
-  seed.ts                # schema + admin user + categories + demo recipes
-```
+*A small personal project — not affiliated with any brand or business.*
