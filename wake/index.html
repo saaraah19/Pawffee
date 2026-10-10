@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Pawffee: waking up</title>
+  <meta name="description" content="Pawffee is waking up. You will be taken to the recipes in a moment.">
+
+  <!-- The only setting in this file: the address of the Render service. -->
+  <meta name="pawffee-app-url" content="https://pawffee.onrender.com">
+
+  <style>
+    :root {
+      --cream: #f9f2e6;
+      --paper: #fffcf6;
+      --espresso: #2c1f17;
+      --coffee: #5b4230;
+      --taupe: #a08c78;
+      --taupe-soft: #e7dcc9;
+      --gold: #b1793a;
+      --gold-deep: #8f5f2a;
+      --paw: #caa06a;
+      --danger: #9c3b2e;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--cream);
+      color: var(--espresso);
+      font-family: "Work Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .display { font-family: "Fraunces", ui-serif, Georgia, "Times New Roman", serif; letter-spacing: -0.01em; }
+
+    header { padding: 22px 24px; }
+    .brand { display: inline-flex; align-items: center; gap: 6px; font-size: 1.5rem; font-weight: 600; }
+    .brand svg { color: var(--gold); transform: rotate(-8deg); margin-bottom: 8px; }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 24px 56px;
+    }
+    .card { width: 100%; max-width: 30rem; text-align: center; }
+
+    /* Paw prints walking across the page */
+    .trail { width: 220px; height: 120px; margin: 0 auto 28px; display: block; color: var(--paw); }
+    .trail use { opacity: 0; animation: step 3.2s infinite ease-in-out; }
+    .trail use:nth-of-type(1) { animation-delay: 0s; }
+    .trail use:nth-of-type(2) { animation-delay: 0.5s; }
+    .trail use:nth-of-type(3) { animation-delay: 1s; }
+    .trail use:nth-of-type(4) { animation-delay: 1.5s; }
+    .trail use:nth-of-type(5) { animation-delay: 2s; }
+    @keyframes step {
+      0%   { opacity: 0; }
+      12%  { opacity: 1; }
+      55%  { opacity: 1; }
+      85%, 100% { opacity: 0; }
+    }
+
+    h1 { margin: 0; font-size: clamp(1.8rem, 6vw, 2.35rem); line-height: 1.15; font-weight: 600; }
+    #message { margin: 14px auto 0; max-width: 26rem; color: var(--coffee); line-height: 1.6; min-height: 3.2em; }
+
+    .bar { margin: 28px auto 0; height: 4px; max-width: 18rem; border-radius: 999px; background: var(--taupe-soft); overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 40%; border-radius: inherit; background: var(--gold); animation: slide 1.6s infinite ease-in-out; }
+    @keyframes slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+
+    .meta { margin-top: 14px; font-size: 0.8rem; color: var(--taupe); font-variant-numeric: tabular-nums; }
+
+    .actions { display: none; margin-top: 28px; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      font: inherit; font-size: 0.9rem; font-weight: 500; cursor: pointer; text-decoration: none;
+      border-radius: 999px; padding: 12px 24px; border: 1px solid rgba(44, 31, 23, 0.2);
+      color: var(--espresso); background: transparent; transition: border-color .15s, color .15s, background .15s;
+    }
+    .btn:hover { border-color: var(--gold); color: var(--gold-deep); }
+    .btn.primary { background: var(--espresso); border-color: var(--espresso); color: var(--cream); }
+    .btn.primary:hover { background: var(--gold-deep); border-color: var(--gold-deep); color: var(--cream); }
+    .btn:focus-visible { outline: 2px solid var(--gold-deep); outline-offset: 2px; }
+
+    footer { padding: 0 24px 28px; text-align: center; font-size: 0.78rem; color: var(--taupe); }
+
+    /* States, driven by body[data-state] */
+    body[data-state="failed"] .actions { display: flex; }
+    body[data-state="failed"] .bar,
+    body[data-state="failed"] .meta,
+    body[data-state="offline"] .bar,
+    body[data-state="offline"] .meta { display: none; }
+    body[data-state="failed"] h1,
+    body[data-state="failed"] .trail { color: var(--danger); }
+    body[data-state="failed"] .trail use { animation: none; opacity: 0.35; }
+    body[data-state="ready"] .bar i { width: 100%; animation: none; transform: none; }
+    body[data-state="ready"] .trail use { animation: none; opacity: 1; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .trail use { animation: none; opacity: 0.55; }
+      .bar i { animation: none; width: 100%; opacity: 0.45; }
+    }
+  </style>
+</head>
+<body data-state="connecting">
+  <header>
+    <span class="brand display">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="#paw"/></svg>
+      Pawffee
+    </span>
+  </header>
+
+  <main>
+    <div class="card">
+      <!-- Five prints, alternating left and right like a cat crossing the page -->
+      <svg class="trail" viewBox="0 0 220 120" fill="currentColor" aria-hidden="true">
+        <defs>
+          <symbol id="paw" viewBox="0 0 24 24">
+            <ellipse cx="12" cy="15.2" rx="5.6" ry="4.6"/>
+            <ellipse cx="4.6" cy="9.4" rx="2.1" ry="2.6" transform="rotate(-18 4.6 9.4)"/>
+            <ellipse cx="9.4" cy="5.6" rx="2.1" ry="2.7" transform="rotate(-6 9.4 5.6)"/>
+            <ellipse cx="14.7" cy="5.6" rx="2.1" ry="2.7" transform="rotate(6 14.7 5.6)"/>
+            <ellipse cx="19.4" cy="9.4" rx="2.1" ry="2.6" transform="rotate(18 19.4 9.4)"/>
+          </symbol>
+        </defs>
+        <use href="#paw" x="6"   y="62" width="34" height="34" transform="rotate(70 23 79)"/>
+        <use href="#paw" x="50"  y="30" width="34" height="34" transform="rotate(70 67 47)"/>
+        <use href="#paw" x="94"  y="62" width="34" height="34" transform="rotate(70 111 79)"/>
+        <use href="#paw" x="138" y="30" width="34" height="34" transform="rotate(70 155 47)"/>
+        <use href="#paw" x="182" y="62" width="34" height="34" transform="rotate(70 199 79)"/>
+      </svg>
+
+      <h1 class="display" id="title">Waking up the kitchen</h1>
+      <p id="message" role="status" aria-live="polite">Getting things ready. This usually takes under a minute.</p>
+
+      <div class="bar" aria-hidden="true"><i></i></div>
+      <p class="meta" id="meta" aria-hidden="true">0:00</p>
+
+      <div class="actions">
+        <button class="btn primary" id="retry" type="button">Try again</button>
+        <a class="btn" id="direct" href="#">Open the site anyway</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>Pawffee runs on free hosting, which rests when nobody has visited for a while.</footer>
+
+  <noscript>
+    <p style="text-align:center;padding:0 24px 24px;color:#5b4230">
+      This page needs JavaScript to check on the site. Please enable it, or open Pawffee from the link you were given.
+    </p>
+  </noscript>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var APP_URL = document.querySelector('meta[name="pawffee-app-url"]').content.replace(/\/+$/, "");
+      var HEALTH_URL = APP_URL + "/api/health";
+
+      var PROBE_TIMEOUT_MS = 10000;   // one health request
+      var SLOW_AFTER_MS = 12000;      // switch to the "this takes a while" message
+      var GIVE_UP_AFTER_MS = 150000;  // stop and offer a manual retry
+
+      var TEXT = {
+        connecting: ["Waking up the kitchen", "Getting things ready. This usually takes under a minute."],
+        slow:       ["Still waking up", "The site rests when nobody has visited for a while, so the first visit is slow. Hang tight, you will be taken there automatically."],
+        database:   ["Almost there", "The server is up and the recipes are being fetched."],
+        ready:      ["Ready", "Taking you in."],
+        failed:     ["That is taking too long", "The site has not answered yet. You can try again, or open it directly in case it is just slow."],
+        offline:    ["You are offline", "Waiting for your connection to come back. This page will carry on by itself."]
+      };
+
+      var body = document.body;
+      var titleEl = document.getElementById("title");
+      var messageEl = document.getElementById("message");
+      var metaEl = document.getElementById("meta");
+      var retryBtn = document.getElementById("retry");
+      var directLink = document.getElementById("direct");
+
+      // Where to send the visitor once the site is up. Only a plain path on the
+      // app's own origin is accepted, so this cannot be turned into an open redirect.
+      var target = (function () {
+        var wanted = new URLSearchParams(location.search).get("to") || "/";
+        try {
+          if (wanted.charAt(0) !== "/" || wanted.charAt(1) === "/" || wanted.indexOf("\\") !== -1) return APP_URL + "/";
+          var url = new URL(wanted, APP_URL + "/");
+          return url.origin === new URL(APP_URL).origin ? url.href : APP_URL + "/";
+        } catch (e) {
+          return APP_URL + "/";
+        }
+      })();
+      directLink.href = target;
+
+      function setState(state) {
+        if (body.getAttribute("data-state") === state) return;
+        body.setAttribute("data-state", state);
+        titleEl.textContent = TEXT[state][0];
+        messageEl.textContent = TEXT[state][1];
+      }
+
+      function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+      function waitForOnline() {
+        return new Promise(function (resolve) {
+          window.addEventListener("online", function once() {
+            window.removeEventListener("online", once);
+            resolve();
+          });
+        });
+      }
+
+      // Returns "ready" (app and database up), "database" (app up, database
+      // still waking) or "waiting" (no usable answer yet).
+      async function probe() {
+        var controller = new AbortController();
+        var timer = setTimeout(function () { controller.abort(); }, PROBE_TIMEOUT_MS);
+        try {
+          var res = await fetch(HEALTH_URL, { cache: "no-store", mode: "cors", signal: controller.signal });
+          var data = await res.json();
+          if (data && data.app === "up") return data.status === "ok" ? "ready" : "database";
+          return "waiting";
+        } catch (e) {
+          // While Render is starting, the request is refused or answered by its
+          // own holding page without CORS headers. Both just mean "not yet".
+          return "waiting";
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
+      var runId = 0;
+      var tick = null;
+
+      async function run() {
+        var id = ++runId;
+        var startedAt = Date.now();
+        var delay = 1500;
+
+        clearInterval(tick);
+        tick = setInterval(function () {
+          var s = Math.floor((Date.now() - startedAt) / 1000);
+          metaEl.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+        }, 1000);
+        metaEl.textContent = "0:00";
+        setState("connecting");
+
+        while (id === runId) {
+          if (!navigator.onLine) {
+            setState("offline");
+            await waitForOnline();
+            if (id !== runId) return;
+            startedAt = Date.now();
+          }
+
+          var result = await probe();
+          if (id !== runId) return;
+
+          if (result === "ready") {
+            clearInterval(tick);
+            setState("ready");
+            // If the site was already awake, skip the pause and go straight in.
+            await sleep(Date.now() - startedAt < 3000 ? 0 : 600);
+            location.replace(target);
+            return;
+          }
+
+          var elapsed = Date.now() - startedAt;
+          if (elapsed > GIVE_UP_AFTER_MS) {
+            clearInterval(tick);
+            setState("failed");
+            retryBtn.focus();
+            return;
+          }
+
+          setState(result === "database" ? "database" : elapsed > SLOW_AFTER_MS ? "slow" : "connecting");
+          await sleep(delay);
+          delay = Math.min(delay * 1.4, 5000);
+        }
+      }
+
+      retryBtn.addEventListener("click", run);
+      run();
+    })();
+  </script>
+</body>
+</html>
