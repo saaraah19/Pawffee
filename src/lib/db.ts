@@ -1,9 +1,10 @@
-import { Pool, type QueryResultRow } from "pg";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import { isTransientDbError, withRetry } from "@/lib/retry";
 
 declare global {
-   
+
   var __pawffee_pg_pool__: Pool | undefined;
-   
+
   var __pawffee_schema_ready__: Promise<void> | undefined;
 }
 
@@ -15,24 +16,57 @@ function createPool() {
         "postgres://user:password@host:5432/pawffee"
     );
   }
-  return new Pool({
+  const created = new Pool({
     connectionString,
     // Most managed Postgres providers (Supabase, Neon, Render) require SSL.
     // Local/self-hosted Postgres typically doesn't -- opt in via PGSSL=true.
     ssl: process.env.PGSSL === "true" ? { rejectUnauthorized: false } : undefined,
     max: 10,
+    // Without a timeout a paused database makes every request hang forever.
+    // Fail after 10s instead so the retry logic below can try again.
+    connectionTimeoutMillis: 10_000,
+    keepAlive: true,
   });
+  // Hosted databases drop idle connections. An unhandled "error" event on an
+  // idle pooled client would crash the whole Node process, so log and move on.
+  created.on("error", (err) => {
+    console.error("[db] idle client error:", err.message);
+  });
+  return created;
 }
 
 export const pool = global.__pawffee_pg_pool__ ?? createPool();
 if (process.env.NODE_ENV !== "production") global.__pawffee_pg_pool__ = pool;
 
+async function runOnClient<T extends QueryResultRow>(
+  client: PoolClient,
+  text: string,
+  params: unknown[]
+): Promise<T[]> {
+  try {
+    const result = await client.query<T>(text, params);
+    client.release();
+    return result.rows;
+  } catch (err) {
+    // A client that lost its connection must not go back into the pool.
+    client.release(isTransientDbError(err));
+    throw err;
+  }
+}
+
+// Only plain reads are safe to run twice. A write that failed halfway might
+// already have been applied, so for those we retry only the connection step.
+const READ_ONLY = /^\s*select\b/i;
+
 export async function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
   params: unknown[] = []
 ): Promise<T[]> {
-  const result = await pool.query<T>(text, params);
-  return result.rows;
+  if (READ_ONLY.test(text)) {
+    return withRetry(async () => runOnClient<T>(await pool.connect(), text, params));
+  }
+  const client = await withRetry(() => pool.connect());
+  return runOnClient<T>(client, text, params);
 }
 
 export async function queryOne<T extends QueryResultRow = QueryResultRow>(
@@ -50,7 +84,7 @@ export async function queryOne<T extends QueryResultRow = QueryResultRow>(
 export async function transaction<T>(
   fn: (q: <R extends QueryResultRow = QueryResultRow>(text: string, params?: unknown[]) => Promise<R[]>) => Promise<T>
 ): Promise<T> {
-  const client = await pool.connect();
+  const client = await withRetry(() => pool.connect());
   try {
     await client.query("BEGIN");
     const q = async <R extends QueryResultRow = QueryResultRow>(text: string, params: unknown[] = []) => {
@@ -61,7 +95,9 @@ export async function transaction<T>(
     await client.query("COMMIT");
     return result;
   } catch (err) {
-    await client.query("ROLLBACK");
+    // If the connection is already gone, ROLLBACK fails too. Keep the original
+    // error instead of replacing it with that one.
+    await client.query("ROLLBACK").catch(() => undefined);
     throw err;
   } finally {
     client.release();
@@ -165,7 +201,13 @@ async function runSchema() {
  */
 export function ensureSchema(): Promise<void> {
   if (!global.__pawffee_schema_ready__) {
-    global.__pawffee_schema_ready__ = runSchema();
+    const pending: Promise<void> = withRetry(runSchema).catch((err) => {
+      // Do not cache a failure. Otherwise one request that hits a sleeping
+      // database would break every later request until the process restarts.
+      if (global.__pawffee_schema_ready__ === pending) global.__pawffee_schema_ready__ = undefined;
+      throw err;
+    });
+    global.__pawffee_schema_ready__ = pending;
   }
   return global.__pawffee_schema_ready__;
 }

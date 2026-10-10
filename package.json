@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
-    "set-admin": "tsx scripts/set-admin.ts"
+    "set-admin": "tsx scripts/set-admin.ts",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1111.0",
