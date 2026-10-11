@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PawIcon from "@/components/PawIcon";
+import { useSlowFlag } from "@/lib/use-slow-flag";
 
 function LoginForm() {
   const router = useRouter();
@@ -13,6 +14,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const slow = useSlowFlag(loading);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,6 +92,11 @@ function LoginForm() {
           >
             {loading ? "Signing in…" : "Sign in"}
           </button>
+          {slow && (
+            <p role="status" className="text-center text-xs text-coffee">
+              The server is waking up after a quiet spell. This can take up to a minute.
+            </p>
+          )}
         </form>
       </div>
     </div>

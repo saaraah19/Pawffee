@@ -29,7 +29,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
   }
 
-  const valid = await verifyCredentials(email, password);
+  let valid: boolean;
+  try {
+    valid = await verifyCredentials(email, password);
+  } catch (err) {
+    // Almost always a paused database that has not finished waking up.
+    console.error("[login] database unavailable:", err);
+    return NextResponse.json(
+      { error: "The database is still waking up. Wait a few seconds and try again." },
+      { status: 503 }
+    );
+  }
   if (!valid) {
     return NextResponse.json({ error: "Incorrect email or password" }, { status: 401 });
   }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { Category } from "@/lib/data/categories";
 import type { FullRecipe } from "@/lib/data/recipes";
+import { useSlowFlag } from "@/lib/use-slow-flag";
 
 type IngredientItem = {
   key: string;
@@ -119,6 +120,7 @@ export default function RecipeEditorForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const slowSave = useSlowFlag(saving);
 
   // --- Ingredient group helpers ---
   function updateGroupName(groupKey: string, name: string) {
@@ -605,10 +607,17 @@ export default function RecipeEditorForm({
       {/* Publishing */}
       <div className="sticky bottom-0 mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-taupe-soft bg-paper p-5">
         <div>
-          {recipe && (
-            <span className="text-xs text-taupe">
-              Currently {recipe.status === "published" ? "published" : "a draft"}.
+          {slowSave ? (
+            <span role="status" className="text-xs text-coffee">
+              The server is waking up after a quiet spell. Your changes are safe, this can take
+              up to a minute.
             </span>
+          ) : (
+            recipe && (
+              <span className="text-xs text-taupe">
+                Currently {recipe.status === "published" ? "published" : "a draft"}.
+              </span>
+            )
           )}
         </div>
         <div className="flex flex-wrap gap-3">
