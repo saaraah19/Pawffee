@@ -17,7 +17,7 @@ export default function AboutPage() {
       <div className="prose-recipe mt-6 space-y-5 text-[1.05rem] leading-relaxed text-coffee">
         <p>
           Pawffee started as a stack of handwritten notes tucked into a
-          kitchen drawer — recipes copied from grandmothers, adapted after a
+          kitchen drawer: recipes copied from grandmothers, adapted after a
           few failed attempts, and occasionally invented out of necessity on
           a slow Sunday.
         </p>
@@ -33,7 +33,7 @@ export default function AboutPage() {
           measurements, honest timings, and a few personal notes about what
           actually matters when you&apos;re standing at the stove.
         </p>
-        <p>Thanks for stopping by — I hope something here earns a place in your own kitchen.</p>
+        <p>Thanks for stopping by. I hope something here earns a place in your own kitchen.</p>
       </div>
     </div>
   );

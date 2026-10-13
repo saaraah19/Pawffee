@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { requireSecret } from "@/lib/env";
 
 // jsonwebtoken relies on Node's crypto module, which isn't available in the
-// default Edge middleware runtime -- run this middleware on the Node runtime
+// default Edge middleware runtime, run this middleware on the Node runtime
 // so JWT verification actually works instead of silently failing every check.
 export const runtime = "nodejs";
 

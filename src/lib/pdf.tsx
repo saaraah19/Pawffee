@@ -208,7 +208,7 @@ export function RecipePdfDocument({ recipe }: { recipe: FullRecipe }) {
                   <View key={ing.id} style={styles.ingredientLine}>
                     <Text style={styles.ingredientName}>
                       {ing.name}
-                      {ing.notes ? ` — ${ing.notes}` : ""}
+                      {ing.notes ? ` (${ing.notes})` : ""}
                     </Text>
                     {(ing.quantity || ing.unit) && (
                       <Text style={styles.ingredientQty}>
@@ -239,7 +239,7 @@ export function RecipePdfDocument({ recipe }: { recipe: FullRecipe }) {
 
         <Text
           style={styles.footer}
-          render={({ pageNumber, totalPages }) => `Pawffee — pawffee.example  ·  Page ${pageNumber} of ${totalPages}`}
+          render={({ pageNumber, totalPages }) => `Pawffee  ·  Page ${pageNumber} of ${totalPages}`}
           fixed
         />
       </Page>

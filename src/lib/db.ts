@@ -19,7 +19,7 @@ function createPool() {
   const created = new Pool({
     connectionString,
     // Most managed Postgres providers (Supabase, Neon, Render) require SSL.
-    // Local/self-hosted Postgres typically doesn't -- opt in via PGSSL=true.
+    // Local/self-hosted Postgres typically doesn't, opt in via PGSSL=true.
     ssl: process.env.PGSSL === "true" ? { rejectUnauthorized: false } : undefined,
     max: 10,
     // Without a timeout a paused database makes every request hang forever.
@@ -196,8 +196,8 @@ async function runSchema() {
 }
 
 /**
- * Ensures the schema exists. Safe to call from many places concurrently --
- * the migration only runs once per process thanks to the memoized promise.
+ * Ensures the schema exists. Safe to call from many places concurrently.
+ * The migration only runs once per process thanks to the memoized promise.
  */
 export function ensureSchema(): Promise<void> {
   if (!global.__pawffee_schema_ready__) {

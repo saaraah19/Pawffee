@@ -21,7 +21,7 @@ async function main() {
   const user = await upsertAdminUser(email, password);
   console.log(`✓ Admin credentials set for ${user.email}`);
   console.log("  Existing sessions signed with the old credentials are unaffected until they");
-  console.log("  expire (7 days) -- restart the app after rotating SESSION_SECRET if you want");
+  console.log("  expire (7 days), restart the app after rotating SESSION_SECRET if you want");
   console.log("  to invalidate all sessions immediately.");
 
   await pool.end();

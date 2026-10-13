@@ -122,7 +122,7 @@ export default function RecipeEditorForm({
   const [deleting, setDeleting] = useState(false);
   const slowSave = useSlowFlag(saving);
 
-  // --- Ingredient group helpers ---
+  // Ingredient group helpers
   function updateGroupName(groupKey: string, name: string) {
     setGroups((prev) => prev.map((g) => (g.key === groupKey ? { ...g, name } : g)));
   }
@@ -371,7 +371,7 @@ export default function RecipeEditorForm({
         <div>
           <span className={labelClass}>Photo gallery</span>
           <p className="mb-2 -mt-1 text-xs text-taupe">
-            Extra photos shown below the cover image — from the top, a slice, close-ups, whatever tells the story. Upload as many as you like.
+            Extra photos shown below the cover image: from the top, a slice, close-ups, whatever tells the story. Upload as many as you like.
           </p>
           {gallery.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-3">
@@ -432,7 +432,7 @@ export default function RecipeEditorForm({
           <div>
             <label htmlFor="difficulty" className={labelClass}>Difficulty</label>
             <select id="difficulty" className={inputClass} value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-              <option value="">—</option>
+              <option value="">Select</option>
               {DIFFICULTIES.map((d) => (
                 <option key={d} value={d}>{d[0].toUpperCase() + d.slice(1)}</option>
               ))}
@@ -442,7 +442,7 @@ export default function RecipeEditorForm({
         </div>
       </Section>
 
-      {/* Ingredients — grouped */}
+      {/* Ingredients, grouped */}
       <Section
         title="Ingredients"
         subtitle="Add a group (e.g. “Dry ingredients”), then list every ingredient that belongs to it. Leave the group name blank if you don't need groups."
@@ -489,7 +489,7 @@ export default function RecipeEditorForm({
                       onChange={(e) => updateItem(group.key, item.key, { unit: e.target.value })}
                     >
                       {UNITS.map((u) => (
-                        <option key={u || "none"} value={u}>{u || "—"}</option>
+                        <option key={u || "none"} value={u}>{u || "None"}</option>
                       ))}
                     </select>
                     <input
@@ -596,7 +596,7 @@ export default function RecipeEditorForm({
       </Section>
 
       {/* Personal notes */}
-      <Section title="Personal notes" subtitle="Optional — leave blank to hide a section on the public page.">
+      <Section title="Personal notes" subtitle="Optional. Leave blank to hide a section on the public page.">
         <TextAreaField label="Before you start" value={beforeYouStart} onChange={setBeforeYouStart} />
         <TextAreaField label="My tips" value={myTips} onChange={setMyTips} />
         <TextAreaField label="My little secret" value={mySecret} onChange={setMySecret} />

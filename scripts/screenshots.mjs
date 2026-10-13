@@ -120,12 +120,12 @@ try {
 
   await attempt("home", async () => {
     await go(page, "/");
-    await shot(page, "home", "home page");
+    await shot(page, "01-home", "home page");
   });
 
   await attempt("home-featured", async () => {
     await scrollTo(page, page.getByRole("heading", { name: "Featured recipes" }), 110);
-    await shot(page, "home-featured", "featured recipes");
+    await shot(page, "01b-home-featured", "featured recipes");
   });
 
   await attempt("recipes", async () => {
@@ -133,45 +133,45 @@ try {
     recipePath = await firstHref(page, 'a[href^="/recipes/"]:not([href*="?"])');
     const title = (await page.locator('a[href^="/recipes/"] h3').first().innerText()).trim();
     recipeWord = title.split(/\s+/)[0].replace(/[^\p{L}\p{N}]/gu, "") || recipeWord;
-    await shot(page, "recipes", "recipe library");
+    await shot(page, "02-recipes", "recipe library");
   });
 
   await attempt("search", async () => {
     await go(page, `/recipes?q=${encodeURIComponent(recipeWord)}`);
-    await shot(page, "search", `search for "${recipeWord}"`);
+    await shot(page, "03-search", `search for "${recipeWord}"`);
   });
 
   await attempt("categories", async () => {
     await go(page, "/categories");
-    await shot(page, "categories", "categories");
+    await shot(page, "04-categories", "categories");
   });
 
   await attempt("category", async () => {
     await go(page, "/categories");
     const href = await firstHref(page, 'a[href^="/categories/"]');
     await go(page, href);
-    await shot(page, "category", "one category");
+    await shot(page, "05-category", "one category");
   });
 
   await attempt("recipe", async () => {
     if (!recipePath) throw new Error("no recipe link was found on /recipes");
     await go(page, recipePath);
-    await shot(page, "recipe", "recipe page, top");
+    await shot(page, "06-recipe-top", "recipe page, top");
   });
 
   await attempt("recipe-details", async () => {
     await scrollTo(page, page.getByRole("heading", { name: "Ingredients" }));
-    await shot(page, "recipe-details", "ingredients and instructions");
+    await shot(page, "09-recipe-ingredients-steps", "ingredients and instructions");
   });
 
   await attempt("recipe-notes", async () => {
     await scrollTo(page, page.getByText(/^(My tips|My little secret|Cooking notes|My verdict)$/), 110);
-    await shot(page, "recipe-notes", "personal notes");
+    await shot(page, "12b-recipe-notes", "personal notes");
   });
 
   await attempt("about", async () => {
     await go(page, "/about");
-    await shot(page, "about", "about page");
+    await shot(page, "15-about", "about page");
   });
 
   await desktop.close();
@@ -188,19 +188,19 @@ try {
 
   await attempt("mobile-home", async () => {
     await go(mobile, "/");
-    await shot(mobile, "mobile-home", "home on a phone");
+    await shot(mobile, "16-mobile-home", "home on a phone");
   });
 
   await attempt("mobile-menu", async () => {
     await mobile.locator('summary[aria-label="Open menu"]').click();
     await mobile.waitForTimeout(200);
-    await shot(mobile, "mobile-menu", "navigation menu open");
+    await shot(mobile, "17-mobile-menu", "navigation menu open");
   });
 
   await attempt("mobile-recipe", async () => {
     if (!recipePath) throw new Error("no recipe link was found");
     await go(mobile, recipePath);
-    await shot(mobile, "mobile-recipe", "recipe on a phone");
+    await shot(mobile, "18-mobile-recipe", "recipe on a phone");
   });
 
   await phone.close();
@@ -216,7 +216,7 @@ try {
 
     await attempt("admin-login", async () => {
       await go(ap, "/admin/login");
-      await shot(ap, "admin-login", "sign in");
+      await shot(ap, "19-admin-login", "sign in");
     });
 
     let signedIn = false;
@@ -231,30 +231,30 @@ try {
     if (signedIn) {
       await attempt("admin-dashboard", async () => {
         await go(ap, "/admin");
-        await shot(ap, "admin-dashboard", "dashboard");
+        await shot(ap, "20-admin-dashboard", "dashboard");
       });
 
       let editPath = null;
       await attempt("admin-recipes", async () => {
         await go(ap, "/admin/recipes");
         editPath = await firstHref(ap, 'a[href^="/admin/recipes/"][href$="/edit"]');
-        await shot(ap, "admin-recipes", "recipe list");
+        await shot(ap, "21-admin-recipes", "recipe list");
       });
 
       await attempt("admin-editor", async () => {
         if (!editPath) throw new Error("no recipe to edit was found");
         await go(ap, editPath);
-        await shot(ap, "admin-editor", "recipe editor");
+        await shot(ap, "22-admin-editor-basics", "recipe editor");
       });
 
       await attempt("admin-editor-notes", async () => {
         await scrollTo(ap, ap.getByRole("heading", { name: "Personal notes" }), 30);
-        await shot(ap, "admin-editor-notes", "editor, personal notes and publish bar");
+        await shot(ap, "24-admin-editor-notes", "editor, personal notes and publish bar");
       });
 
       await attempt("admin-categories", async () => {
         await go(ap, "/admin/categories");
-        await shot(ap, "admin-categories", "category manager");
+        await shot(ap, "25-admin-categories", "category manager");
       });
     }
 

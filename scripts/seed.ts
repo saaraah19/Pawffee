@@ -33,7 +33,7 @@ const DEMO_RECIPES: (Omit<RecipeInput, "category_id"> & { categorySlug: string }
     difficulty: "medium",
     cost_dzd: 1400,
     before_you_start:
-      "Brown the butter ahead of time and let it re-solidify in the fridge for about an hour — cold brown butter creams properly with the sugar.",
+      "Brown the butter ahead of time and let it re-solidify in the fridge for about an hour, because cold brown butter creams properly with the sugar.",
     my_tips:
       "Use a kitchen scale for the flour. Chill the dough for the full hour; rushing this step is the #1 reason these spread too thin.",
     my_secret: "A pinch of flaky salt on top right when they come out of the oven, while they're still soft.",
@@ -59,7 +59,7 @@ const DEMO_RECIPES: (Omit<RecipeInput, "category_id"> & { categorySlug: string }
       { text: "Cream the brown butter with both sugars until light and fluffy, about 3 minutes." },
       { text: "Beat in the eggs one at a time, then the vanilla." },
       { text: "Fold in the dry ingredients until just combined, then fold in the chopped chocolate." },
-      { text: "Chill the dough for at least 1 hour — this is not optional." },
+      { text: "Chill the dough for at least 1 hour. This step is not optional." },
       { text: "Scoop into balls, space well apart on a lined tray, and bake at 190°C for 11–13 minutes until the edges are set but the centers still look slightly underdone." },
       { text: "Sprinkle with flaky salt immediately and let cool on the tray for 5 minutes before moving." },
     ],
@@ -68,7 +68,7 @@ const DEMO_RECIPES: (Omit<RecipeInput, "category_id"> & { categorySlug: string }
     categorySlug: "cakes",
     title: "Basbousa with Orange Blossom Syrup",
     description:
-      "A dense, syrup-soaked semolina cake — one of the first things I ever learned to bake properly.",
+      "A dense, syrup-soaked semolina cake, and one of the first things I ever learned to bake properly.",
     status: "published",
     featured: true,
     is_demo: true,
@@ -80,8 +80,8 @@ const DEMO_RECIPES: (Omit<RecipeInput, "category_id"> & { categorySlug: string }
     difficulty: "easy",
     cost_dzd: 1100,
     before_you_start: "Make the syrup first so it has time to cool completely before it meets the hot cake.",
-    my_tips: "Pour the cold syrup over the hot cake, never the other way around — that's what gives it the right texture.",
-    cooking_notes: "Score the cake into diamonds before baking, not after — much easier to cut cleanly.",
+    my_tips: "Pour the cold syrup over the hot cake, never the other way around, because that is what gives it the right texture.",
+    cooking_notes: "Score the cake into diamonds before baking, not after, so it is much easier to cut cleanly.",
     my_verdict: "Keeps well for days at room temperature, if it lasts that long.",
     ingredients: [
       { group: "Cake", name: "fine semolina", quantity: "300", unit: "g" },
@@ -117,7 +117,7 @@ const DEMO_RECIPES: (Omit<RecipeInput, "category_id"> & { categorySlug: string }
     servings: 10,
     difficulty: "hard",
     cost_dzd: 350,
-    before_you_start: "Start this the night before — most of the time is unattended rise.",
+    before_you_start: "Start this the night before, since most of the time is unattended rise.",
     my_tips: "Don't skip the preheated Dutch oven; it's what gives the crust its crackle.",
     cooking_notes: "Internal temperature should read about 96–98°C when it's fully done.",
     my_verdict: "Worth the wait. This is the loaf I make when people are coming over.",
@@ -134,7 +134,7 @@ const DEMO_RECIPES: (Omit<RecipeInput, "category_id"> & { categorySlug: string }
       { text: "Preheat a Dutch oven at 230°C for 30 minutes." },
       { text: "Score the dough, transfer into the hot pot, cover, and bake 25 minutes." },
       { text: "Uncover and bake a further 15–20 minutes until deep golden brown." },
-      { text: "Cool completely on a rack — at least 1 hour — before slicing." },
+      { text: "Cool completely on a rack for at least 1 hour before slicing." },
     ],
   },
   {
@@ -202,7 +202,7 @@ const DEMO_RECIPES: (Omit<RecipeInput, "category_id"> & { categorySlug: string }
   {
     categorySlug: "pastries",
     title: "Pistachio Baklava (testing notes)",
-    description: "Still adjusting the syrup ratio — not ready to publish yet.",
+    description: "Still adjusting the syrup ratio, so not ready to publish yet.",
     status: "draft",
     featured: false,
     is_demo: true,
@@ -212,7 +212,7 @@ const DEMO_RECIPES: (Omit<RecipeInput, "category_id"> & { categorySlug: string }
     servings: 20,
     difficulty: "hard",
     cost_dzd: 2200,
-    cooking_notes: "Third attempt — syrup was slightly too sweet, try reducing sugar by 20g next time.",
+    cooking_notes: "Third attempt: the syrup was slightly too sweet, try reducing sugar by 20g next time.",
     ingredients: [
       { group: "Filling", name: "shelled pistachios", quantity: "300", unit: "g", notes: "finely chopped" },
       { group: "Filling", name: "sugar", quantity: "2", unit: "tbsp" },
@@ -240,9 +240,9 @@ async function main() {
   const adminPassword = process.env.ADMIN_PASSWORD;
   if (adminEmail && adminPassword) {
     await ensureAdminUser(adminEmail, adminPassword);
-    console.log(`✓ Admin user ready: ${adminEmail}`);
+    console.log(`OK Admin user ready: ${adminEmail}`);
   } else {
-    console.warn("⚠ ADMIN_EMAIL / ADMIN_PASSWORD not set — skipping admin user creation.");
+    console.warn("Warning: ADMIN_EMAIL / ADMIN_PASSWORD not set, skipping admin user creation.");
   }
 
   for (const cat of CATEGORY_SEED) {
@@ -251,7 +251,7 @@ async function main() {
     );
     if (!existing) {
       await createCategory(cat.name, cat.description);
-      console.log(`✓ Category created: ${cat.name}`);
+      console.log(`OK Category created: ${cat.name}`);
     }
   }
 
@@ -259,14 +259,14 @@ async function main() {
     `SELECT COUNT(*) as count FROM recipes WHERE is_demo = true`
   );
   if (Number(existingDemo[0].count) > 0) {
-    console.log("✓ Demo recipes already present — skipping recipe seed.");
+    console.log("OK Demo recipes already present, skipping recipe seed.");
   } else {
     for (const demo of DEMO_RECIPES) {
       const category = await getCategoryBySlug(demo.categorySlug);
       const { categorySlug, ...input } = demo;
       void categorySlug;
       await createRecipe({ ...input, category_id: category?.id ?? null });
-      console.log(`✓ Recipe created: ${demo.title}`);
+      console.log(`OK Recipe created: ${demo.title}`);
     }
   }
 

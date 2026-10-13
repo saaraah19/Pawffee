@@ -3,11 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Pawffee — Recipes worth keeping",
-    template: "%s — Pawffee",
+    default: "Pawffee | Recipes worth keeping",
+    template: "%s | Pawffee",
   },
   description:
-    "A warm, personal collection of cooking and baking recipes — made, tested, and kept, with a little cat-loving soul.",
+    "A warm, personal collection of cooking and baking recipes that worked, saved with love and shared with you.",
   metadataBase: new URL("http://localhost:3000"),
   openGraph: {
     siteName: "Pawffee",

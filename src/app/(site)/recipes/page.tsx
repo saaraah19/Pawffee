@@ -8,7 +8,7 @@ import EmptyState from "@/components/EmptyState";
 
 export const metadata: Metadata = {
   title: "Recipes",
-  description: "Browse the full Pawffee recipe library — search or filter by category.",
+  description: "Browse the full Pawffee recipe library. Search or filter by category.",
 };
 
 const PER_PAGE = 12;

@@ -18,7 +18,7 @@ export default async function CategoriesPage() {
       <p className="label-eyebrow">Browse by mood</p>
       <h1 className="mt-2 font-display text-4xl font-semibold text-espresso">Categories</h1>
       <p className="mt-3 max-w-xl text-coffee">
-        From weekend bakes to quick weeknight cooking — find recipes by the
+        From weekend bakes to quick weeknight cooking, find recipes by the
         kind of thing you&apos;re after.
       </p>
 

@@ -8,8 +8,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Point this at your database provider's connection string --
-      # deliberately left blank so it never ends up committed to the repo.
+      # Point this at your database provider's connection string.
+      # It is deliberately left blank so it never ends up committed to the repo.
       # A permanently-free Postgres from Neon or Supabase is recommended
       # over Render's own free database, which auto-deletes after 30 days.
       - key: DATABASE_URL

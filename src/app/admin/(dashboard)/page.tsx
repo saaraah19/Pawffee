@@ -52,7 +52,7 @@ export default async function AdminDashboardPage() {
         </div>
         <div className="mt-4 overflow-hidden rounded-2xl border border-taupe-soft bg-paper">
           {recent.rows.length === 0 ? (
-            <p className="p-6 text-sm text-coffee">No recipes yet — create your first one.</p>
+            <p className="p-6 text-sm text-coffee">No recipes yet. Create your first one.</p>
           ) : (
             <table className="w-full text-left text-sm">
               <thead>

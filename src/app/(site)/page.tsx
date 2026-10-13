@@ -29,12 +29,12 @@ export default async function HomePage() {
               A personal kitchen notebook
             </p>
             <h1 className="font-display text-4xl font-semibold leading-[1.08] text-espresso sm:text-5xl lg:text-[3.4rem]">
-              Recipes I&apos;ve made, tested, and decided were worth keeping.
+              Recipes that worked, saved with love and shared with you.
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-coffee">
-              Pawffee is a small, slowly-growing collection of cakes, bakes and
-              everyday cooking — the ones that earned a second and third
-              attempt, written down properly so you can make them too.
+              Cooking is a hobby I cherish, and Pawffee is where I keep the
+              recipes that turned out right: saved with the little notes that
+              made them work, and shared so you can make them too.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
@@ -120,7 +120,7 @@ export default async function HomePage() {
           {latest.length === 0 ? (
             <EmptyState
               title="The kitchen is quiet, for now."
-              message="No recipes have been published yet — check back soon."
+              message="No recipes have been published yet. Check back soon."
             />
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -163,7 +163,7 @@ export default async function HomePage() {
             &ldquo;Every recipe here has been made in my own kitchen, usually more
             than once, always with a cat somewhere underfoot.&rdquo;
           </p>
-          <p className="mt-6 text-sm text-coffee">— from the Pawffee kitchen</p>
+          <p className="mt-6 text-sm text-coffee">From the Pawffee kitchen</p>
         </div>
       </section>
     </>

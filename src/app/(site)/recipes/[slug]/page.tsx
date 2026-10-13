@@ -22,7 +22,7 @@ export async function generateMetadata({
   if (!recipe) return {};
   return {
     title: recipe.title,
-    description: recipe.description || `${recipe.title} — a Pawffee recipe.`,
+    description: recipe.description || `${recipe.title}, a Pawffee recipe.`,
     alternates: { canonical: `/recipes/${recipe.slug}` },
     openGraph: {
       title: recipe.title,

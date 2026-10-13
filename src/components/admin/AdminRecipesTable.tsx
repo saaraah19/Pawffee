@@ -48,7 +48,7 @@ export default function AdminRecipesTable({ recipes }: { recipes: RecipeRow[] })
   if (rows.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-taupe-soft bg-paper/60 p-10 text-center text-sm text-coffee">
-        No recipes yet — create your first one.
+        No recipes yet. Create your first one.
       </div>
     );
   }
@@ -73,7 +73,7 @@ export default function AdminRecipesTable({ recipes }: { recipes: RecipeRow[] })
                   {r.title}
                 </Link>
               </td>
-              <td className="px-5 py-3 text-coffee">{r.category_name ?? "—"}</td>
+              <td className="px-5 py-3 text-coffee">{r.category_name ?? "None"}</td>
               <td className="px-5 py-3"><StatusPill status={r.status} /></td>
               <td className="px-5 py-3 text-taupe">{formatDate(r.updated_at)}</td>
               <td className="px-5 py-3">

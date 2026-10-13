@@ -163,7 +163,7 @@ export default function CategoryManager({ categories }: { categories: CategoryWi
                   ) : (
                     <>
                       <td className="px-5 py-3 font-medium text-espresso">{c.name}</td>
-                      <td className="px-5 py-3 text-coffee">{c.description || "—"}</td>
+                      <td className="px-5 py-3 text-coffee">{c.description || "None"}</td>
                       <td className="px-5 py-3 text-coffee">{c.recipe_count}</td>
                       <td className="px-5 py-3">
                         <div className="flex justify-end gap-3 text-xs">

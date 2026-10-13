@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Fraunces: editorial display serif with soft, slightly wonky curves — the
+/* Fraunces: editorial display serif with soft, slightly wonky curves, the
    Pawffee wordmark and recipe titles live here. Work Sans: quiet, highly
    readable body/UI face. Both self-hosted via fontsource (no external calls). */
 @import "@fontsource/fraunces/400.css";
@@ -14,14 +14,14 @@
 @import "@fontsource/work-sans/600.css";
 
 :root {
-  /* --- Pawffee palette --- */
+  /* Pawffee palette */
   --cream: #f9f2e6;      /* page background */
   --paper: #fffcf6;      /* card / surface background */
   --espresso: #2c1f17;   /* primary text, deep roasted brown */
   --coffee: #5b4230;     /* secondary text / mid brown */
   --taupe: #a08c78;      /* muted borders, quiet UI */
   --taupe-soft: #e7dcc9; /* dividers, subtle fills */
-  --gold: #b1793a;       /* warm caramel accent — links, highlights */
+  --gold: #b1793a;       /* warm caramel accent, links, highlights */
   --gold-deep: #8f5f2a;  /* accent hover / emphasis */
   --sage: #6b7658;       /* small secondary accent, used sparingly (herbs) */
   --paw: #caa06a;        /* paw-print motif tone */
@@ -67,7 +67,7 @@ h1, h2, h3, h4, .font-display {
   color: var(--espresso);
 }
 
-/* Visible focus state everywhere — accessibility floor */
+/* Visible focus state everywhere, accessibility floor */
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,

@@ -7,17 +7,17 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
 /**
  * Image uploads must survive restarts/redeploys, so they can't live on a
  * serverless function's local filesystem (e.g. Vercel's /tmp, or any
- * container that's rebuilt on deploy) — that storage is wiped constantly.
+ * container that's rebuilt on deploy), that storage is wiped constantly.
  *
  * Three backends are supported, tried in this order:
  *   1. Cloudinary, if CLOUDINARY_* env vars are set (preferred).
  *   2. Any S3-compatible bucket (AWS S3, R2, Spaces, Supabase, MinIO...),
  *      if S3_* env vars are set.
- *   3. Local disk under public/uploads — dev-only fallback, NOT persistent
+ *   3. Local disk under public/uploads, dev-only fallback, NOT persistent
  *      on most production hosting.
  */
 
-// --- Cloudinary -------------------------------------------------------
+// Cloudinary
 
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY;
@@ -41,7 +41,7 @@ function configureCloudinary() {
   }
 }
 
-// --- S3-compatible ------------------------------------------------------
+// S3-compatible
 
 const BUCKET = process.env.S3_BUCKET;
 const REGION = process.env.S3_REGION || "auto";
