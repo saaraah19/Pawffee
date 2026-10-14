@@ -25,7 +25,7 @@ export default function IngredientList({ ingredients }: { ingredients: RecipeIng
               >
                 <span className="text-espresso">
                   {ing.name}
-                  {ing.notes && <span className="text-taupe"> — {ing.notes}</span>}
+                  {ing.notes && <span className="text-taupe"> ({ing.notes})</span>}
                 </span>
                 {(ing.quantity || ing.unit) && (
                   <span className="shrink-0 font-medium text-coffee">

@@ -10,8 +10,8 @@ export default function Footer() {
           <div>
             <Logo />
             <p className="mt-3 max-w-sm text-sm text-coffee">
-              A little corner of the internet for recipes I&apos;ve made, tested, and
-              decided were worth keeping — kept company by a cat or two.
+              A little corner of the internet where I save the recipes that
+              worked and share them with you, with a cat or two for company.
             </p>
           </div>
           <div className="flex gap-12 text-sm">
